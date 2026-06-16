@@ -28,3 +28,31 @@ class DocumentRecord:
             return clean_text
 
         return clean_text[:max_chars].rstrip() + "..."
+
+
+@dataclass(frozen=True)
+class ChunkRecord:
+    """
+    Represents one searchable chunk created from a source document.
+
+    Later RAG steps will embed and retrieve these chunks.
+    """
+
+    chunk_id: str
+    doc_id: str
+    title: str
+    text: str
+    source_path: str
+    chunk_index: int
+    heading: str | None = None
+    category: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    def preview(self, max_chars: int = 120) -> str:
+        """Return a short one-line preview of the chunk text."""
+        clean_text = " ".join(self.text.split())
+
+        if len(clean_text) <= max_chars:
+            return clean_text
+
+        return clean_text[:max_chars].rstrip() + "..."
