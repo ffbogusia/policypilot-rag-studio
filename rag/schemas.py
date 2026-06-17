@@ -56,3 +56,23 @@ class ChunkRecord:
             return clean_text
 
         return clean_text[:max_chars].rstrip() + "..."
+
+
+@dataclass(frozen=True)
+class EmbeddedChunkRecord:
+    """
+    Represents a chunk together with its embedding vector.
+
+    This is the bridge between chunking and vector search.
+    """
+
+    chunk: ChunkRecord
+    vector: list[float]
+    embedding_provider: str
+    embedding_model: str
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def dimension(self) -> int:
+        """Return the number of values in the embedding vector."""
+        return len(self.vector)
