@@ -76,3 +76,42 @@ class EmbeddedChunkRecord:
     def dimension(self) -> int:
         """Return the number of values in the embedding vector."""
         return len(self.vector)
+    
+@dataclass(frozen=True)
+class ChunkResult:
+    """
+    Represents one retrieved chunk returned by a retriever.
+    """
+
+    chunk_id: str
+    text: str
+    source_path: str
+    title: str
+    score: float
+    retrieval_mode: str
+    rank: int
+    heading: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    def preview(self, max_chars: int = 120) -> str:
+        """Return a short one-line preview of the retrieved chunk."""
+        clean_text = " ".join(self.text.split())
+
+        if len(clean_text) <= max_chars:
+            return clean_text
+
+        return clean_text[:max_chars].rstrip() + "..."
+
+
+@dataclass(frozen=True)
+class RetrievalResult:
+    """
+    Represents the full retrieval response for one user query.
+    """
+
+    query: str
+    retrieval_mode: str
+    top_k: int
+    chunks: list[ChunkResult]
+    index_path: str
+    debug: dict[str, Any] = field(default_factory=dict)
