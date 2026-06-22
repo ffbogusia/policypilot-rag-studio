@@ -115,3 +115,20 @@ class RetrievalResult:
     chunks: list[ChunkResult]
     index_path: str
     debug: dict[str, Any] = field(default_factory=dict)
+
+@dataclass(frozen=True)
+class AnswerResult:
+    """
+    Represents a grounded RAG answer.
+
+    The answer should be based on retrieved chunks and include citations.
+    """
+
+    question: str
+    answer: str
+    cited_chunk_ids: list[str]
+    sources: list[dict[str, Any]]
+    grounding_status: str
+    refusal: bool
+    model_name: str | None = None
+    debug: dict[str, Any] = field(default_factory=dict)
