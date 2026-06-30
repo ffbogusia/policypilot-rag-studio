@@ -35,9 +35,7 @@ def render_sources(sources: list[dict[str, object]]) -> None:
         return
 
     for source in sources:
-        with st.expander(
-            f"{source['rank']}. {source['title']} — {source['heading']}"
-        ):
+        with st.expander(f"{source['rank']}. {source['title']} — {source['heading']}"):
             st.write(f"**Chunk ID:** `{source['chunk_id']}`")
             st.write(f"**Source path:** `{source['source_path']}`")
             st.write(f"**Score:** `{source['score']}`")
@@ -118,9 +116,7 @@ def main() -> None:
     )
 
     selected_demo_question = next(
-        question
-        for question in demo_questions
-        if question["label"] == selected_label
+        question for question in demo_questions if question["label"] == selected_label
     )
 
     question = st.text_area(
@@ -162,7 +158,28 @@ def main() -> None:
             st.write(f"**Model:** `{result.model_name}`")
             st.write(f"**Grounding status:** `{result.grounding_status}`")
             st.write(f"**Grounding reason:** {result.debug.get('grounding_reason')}")
-            st.write(f"**Retrieved chunks:** {result.debug.get('retrieved_chunk_count')}")
+            st.write(
+                f"**Retrieved chunks:** {result.debug.get('retrieved_chunk_count')}"
+            )
+            retrieved_chunks = result.debug.get("retrieved_chunks", [])
+
+        if retrieved_chunks:
+            st.write("**Retrieved chunk details:**")
+
+            for chunk in retrieved_chunks:
+                cited_marker = (
+                    "✅ cited"
+                    if chunk["chunk_id"] in result.cited_chunk_ids
+                    else "not cited"
+                )
+
+                with st.expander(
+                    f"Rank {chunk['rank']} | Score {chunk['score']} | {chunk['title']} | {cited_marker}"
+                ):
+                    st.write(f"**Chunk ID:** `{chunk['chunk_id']}`")
+                    st.write(f"**Heading:** {chunk['heading']}")
+                    st.write(f"**Source path:** `{chunk['source_path']}`")
+                    st.write(chunk["preview"])
             st.write("**Cited chunk IDs:**")
             st.json(result.cited_chunk_ids)
 

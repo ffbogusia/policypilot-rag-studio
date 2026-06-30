@@ -10,7 +10,7 @@ from retrieval.retriever import retrieve
 
 
 REFUSAL_MESSAGE = (
-    "I do not have enough information in the provided policy documents to answer this."
+    "I do not have enough information in the provided policy documents to answer this safely."
 )
 
 STOPWORDS = {
@@ -148,15 +148,29 @@ def _build_fallback_answer(
 
     sentences = _select_relevant_sentences(question, chunks)
 
-    bullet_points = "\n".join(
-        f"- {sentence}"
-        for sentence in sentences
-    )
+    bullet_points = "\n".join(f"- {sentence}" for sentence in sentences)
 
     return (
         "Based on the retrieved policy sources, the relevant evidence is:\n"
         f"{bullet_points}"
     )
+
+
+def _chunks_debug_payload(chunks: list[ChunkResult]) -> list[dict[str, object]]:
+    """Create a UI-friendly debug payload for retrieved chunks."""
+
+    return [
+        {
+            "rank": chunk.rank,
+            "score": round(chunk.score, 4),
+            "chunk_id": chunk.chunk_id,
+            "title": chunk.title,
+            "heading": chunk.heading,
+            "source_path": chunk.source_path,
+            "preview": chunk.preview(220),
+        }
+        for chunk in chunks
+    ]
 
 
 def generate_answer_from_retrieval(
@@ -189,6 +203,7 @@ def generate_answer_from_retrieval(
                 "grounding_reason": grounding["reason"],
                 "prompt_preview": prompt[:500],
                 "retrieved_chunk_count": len(chunks),
+                "retrieved_chunks": _chunks_debug_payload(chunks),
             },
         )
 
@@ -221,6 +236,7 @@ def generate_answer_from_retrieval(
             "grounding_reason": grounding["reason"],
             "prompt_preview": prompt[:500],
             "retrieved_chunk_count": len(chunks),
+            "retrieved_chunks": _chunks_debug_payload(chunks),
         },
     )
 
