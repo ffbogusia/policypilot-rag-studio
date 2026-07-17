@@ -1,0 +1,10 @@
+{"id":"q001","question":"Can contractors access production systems?","expected_source":"access_policy.md","expected_refusal":false,"must_contain":["contractors","approval"]}
+{"id":"q002","question":"Do privileged users need MFA?","expected_source":"mfa_policy.md","expected_refusal":false,"must_contain":["MFA"]}
+{"id":"q003","question":"What should employees do after a security incident?","expected_source":"incident_response.md","expected_refusal":false,"must_contain":["report"]}
+{"id":"q004","question":"Can employees share passwords in chat?","expected_source":"password_policy.md","expected_refusal":false,"must_contain":["passwords","share"]}
+{"id":"q005","question":"Is VPN required when using airport Wi-Fi?","expected_source":"remote_work_policy.md","expected_refusal":false,"must_contain":["VPN"]}
+{"id":"q006","question":"Can customer data be shared with public AI tools?","expected_source":"privacy_policy.md","expected_refusal":false,"must_contain":["customer data","public AI tools"]}
+{"id":"q007","question":"Can employees paste API keys into public AI tools?","expected_source":"ai_usage_policy.md","expected_refusal":false,"must_contain":["API keys","public AI tools"]}
+{"id":"q008","question":"What is the CEO's favorite restaurant?","expected_source":null,"expected_refusal":true,"must_contain":[]}
+{"id":"q009","question":"What is the employee salary increase plan for next year?","expected_source":null,"expected_refusal":true,"must_contain":[]}
+{"id":"q010","question":"Which secret project will be launched next quarter?","expected_source":null,"expected_refusal":true,"must_contain":[]}
