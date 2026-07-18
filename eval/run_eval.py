@@ -10,6 +10,7 @@ from rag.schemas import AnswerResult
 
 DEFAULT_GOLDEN_QUESTIONS_PATH = Path("eval/golden_questions.jsonl")
 DEFAULT_INDEX_DIR = Path(".cache/vector_store")
+DEFAULT_REPORT_PATH = Path("eval/eval_report.md")
 
 
 @dataclass(frozen=True)
@@ -193,6 +194,67 @@ def print_results(results: list[EvaluationResult]) -> None:
         print(f"  Answer preview:   {result.answer_preview}")
         print("-" * 72)
 
+def build_markdown_report(results: list[EvaluationResult]) -> str:
+    """Build a Markdown evaluation report."""
+
+    passed_count = sum(result.passed for result in results)
+    total_count = len(results)
+
+    lines = [
+        "# RAG Evaluation Report",
+        "",
+        f"**Summary:** {passed_count}/{total_count} passed",
+        "",
+        "This report was generated locally from golden questions.",
+        "",
+        "## Results",
+        "",
+        "| ID | Status | Question | Expected source | Actual refusal | Grounding |",
+        "| --- | --- | --- | --- | --- | --- |",
+    ]
+
+    for result in results:
+        status = "PASS" if result.passed else "FAIL"
+        expected_source = result.expected_source or "-"
+        question = result.question.replace("|", "\\|")
+
+        lines.append(
+            "| "
+            f"{result.id} | "
+            f"{status} | "
+            f"{question} | "
+            f"{expected_source} | "
+            f"{result.actual_refusal} | "
+            f"{result.grounding_status} |"
+        )
+
+    lines.extend(
+        [
+            "",
+            "## Notes",
+            "",
+            "- This evaluation uses synthetic policy documents only.",
+            "- The default local hash embedding provider is deterministic but not semantically strong.",
+            "- Failing cases should be inspected with the RAG Debugger before changing the pipeline.",
+            "",
+        ]
+    )
+
+    return "\n".join(lines)
+
+
+def write_markdown_report(
+    results: list[EvaluationResult],
+    output_path: str | Path = DEFAULT_REPORT_PATH,
+) -> Path:
+    """Write a Markdown evaluation report to disk."""
+
+    report_path = Path(output_path)
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(build_markdown_report(results), encoding="utf-8")
+
+    return report_path
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run local RAG evaluation.")
@@ -212,6 +274,11 @@ def main() -> None:
         default=5,
         help="Number of chunks to retrieve per question.",
     )
+    parser.add_argument(
+        "--report-out",
+        default=str(DEFAULT_REPORT_PATH),
+        help="Path where the Markdown evaluation report will be written.",
+    )
 
     args = parser.parse_args()
 
@@ -223,6 +290,13 @@ def main() -> None:
     )
 
     print_results(results)
+
+    report_path = write_markdown_report(
+        results=results,
+        output_path=args.report_out,
+    )
+
+    print(f"Markdown report written to: {report_path}")
 
 
 if __name__ == "__main__":

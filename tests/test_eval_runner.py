@@ -3,6 +3,8 @@ from eval.run_eval import (
     _answer_contains_all,
     evaluate_answer,
     load_golden_questions,
+    build_markdown_report,
+    write_markdown_report,
 )
 from rag.schemas import AnswerResult
 
@@ -90,3 +92,44 @@ def test_evaluate_answer_supports_expected_refusal() -> None:
 
     assert result.passed is True
     assert result.refusal_match is True
+
+def test_write_markdown_report_creates_file(tmp_path) -> None:
+    result = evaluate_answer(
+        EvaluationCase(
+            id="q001",
+            question="Do privileged users need MFA?",
+            expected_source="mfa_policy.md",
+            expected_refusal=False,
+            must_contain=["MFA"],
+        ),
+        AnswerResult(
+            question="Do privileged users need MFA?",
+            answer="Privileged users must use MFA.",
+            cited_chunk_ids=["mfa_policy.md::chunk_001"],
+            sources=[
+                {
+                    "chunk_id": "mfa_policy.md::chunk_001",
+                    "source_path": "data/sample_policies/mfa_policy.md",
+                    "score": 0.9,
+                }
+            ],
+            grounding_status="PASS",
+            refusal=False,
+            model_name="deterministic-fallback",
+            debug={},
+        ),
+    )
+
+    report_text = build_markdown_report([result])
+
+    assert "# RAG Evaluation Report" in report_text
+    assert "**Summary:** 1/1 passed" in report_text
+    assert "q001" in report_text
+
+    report_path = write_markdown_report(
+        results=[result],
+        output_path=tmp_path / "eval_report.md",
+    )
+
+    assert report_path.exists()
+    assert "Do privileged users need MFA?" in report_path.read_text()
