@@ -1,4 +1,10 @@
-from agent.nodes import retrieve_chunks_node
+import pytest
+
+from agent.nodes import (
+    check_evidence_node,
+    generate_answer_node,
+    retrieve_chunks_node,
+)
 from agent.state import create_initial_state
 from rag.schemas import ChunkResult, RetrievalResult
 
@@ -17,6 +23,17 @@ def _chunk() -> ChunkResult:
     )
 
 
+def _retrieval_result() -> RetrievalResult:
+    return RetrievalResult(
+        query="Do privileged users need MFA?",
+        retrieval_mode="vector",
+        top_k=3,
+        chunks=[_chunk()],
+        index_path=".cache/vector_store/index.json",
+        debug={"embedding_provider": "hash"},
+    )
+
+
 def test_retrieve_chunks_node_adds_retrieved_chunks(monkeypatch) -> None:
     def fake_retrieve(query, mode, top_k, index_dir):
         assert query == "Do privileged users need MFA?"
@@ -24,14 +41,7 @@ def test_retrieve_chunks_node_adds_retrieved_chunks(monkeypatch) -> None:
         assert top_k == 3
         assert str(index_dir) == ".cache/vector_store"
 
-        return RetrievalResult(
-            query=query,
-            retrieval_mode=mode,
-            top_k=top_k,
-            chunks=[_chunk()],
-            index_path=".cache/vector_store/index.json",
-            debug={"embedding_provider": "hash"},
-        )
+        return _retrieval_result()
 
     monkeypatch.setattr("agent.nodes.retrieve", fake_retrieve)
 
@@ -43,7 +53,41 @@ def test_retrieve_chunks_node_adds_retrieved_chunks(monkeypatch) -> None:
     )
 
     assert new_state["question"] == "Do privileged users need MFA?"
+    assert new_state["retrieval_result"] is not None
     assert len(new_state["retrieved_chunks"]) == 1
     assert new_state["retrieved_chunks"][0].chunk_id == "mfa_policy.md::chunk_001"
     assert new_state["debug"]["retrieval"]["retrieved_chunk_count"] == 1
     assert new_state["debug"]["retrieval"]["embedding_provider"] == "hash"
+
+
+def test_check_evidence_node_sets_evidence_decision() -> None:
+    state = create_initial_state("Do privileged users need MFA?")
+    state["retrieved_chunks"] = [_chunk()]
+
+    new_state = check_evidence_node(state)
+
+    assert new_state["has_enough_evidence"] is True
+    assert new_state["debug"]["evidence_check"]["has_enough_evidence"] is True
+    assert new_state["debug"]["evidence_check"]["retrieved_chunk_count"] == 1
+
+
+def test_generate_answer_node_creates_answer_result() -> None:
+    state = create_initial_state("Do privileged users need MFA?")
+    state["retrieval_result"] = _retrieval_result()
+    state["retrieved_chunks"] = [_chunk()]
+    state["has_enough_evidence"] = True
+
+    new_state = generate_answer_node(state)
+
+    assert new_state["answer_result"] is not None
+    assert new_state["answer_result"].refusal is False
+    assert "MFA" in new_state["answer_result"].answer
+    assert new_state["debug"]["answer_generation"]["refusal"] is False
+    assert new_state["debug"]["answer_generation"]["source_count"] == 1
+
+
+def test_generate_answer_node_requires_retrieval_result() -> None:
+    state = create_initial_state("Do privileged users need MFA?")
+
+    with pytest.raises(ValueError, match="Run retrieve_chunks_node first"):
+        generate_answer_node(state)

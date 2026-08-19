@@ -1,12 +1,13 @@
 from typing import Any, NotRequired, TypedDict
 
-from rag.schemas import AnswerResult, ChunkResult
+from rag.schemas import AnswerResult, ChunkResult, RetrievalResult
 
 
 class RagWorkflowState(TypedDict):
     """Shared state passed between RAG workflow steps."""
 
     question: str
+    retrieval_result: NotRequired[RetrievalResult | None]
     retrieved_chunks: NotRequired[list[ChunkResult]]
     has_enough_evidence: NotRequired[bool]
     answer_result: NotRequired[AnswerResult | None]
@@ -18,6 +19,7 @@ def create_initial_state(question: str) -> RagWorkflowState:
 
     return {
         "question": question,
+        "retrieval_result": None,
         "retrieved_chunks": [],
         "has_enough_evidence": False,
         "answer_result": None,
@@ -30,6 +32,7 @@ def summarize_state(state: RagWorkflowState) -> dict[str, Any]:
 
     return {
         "question": state["question"],
+        "has_retrieval_result": state.get("retrieval_result") is not None,
         "retrieved_chunk_count": len(state.get("retrieved_chunks", [])),
         "has_enough_evidence": state.get("has_enough_evidence", False),
         "has_answer": state.get("answer_result") is not None,
