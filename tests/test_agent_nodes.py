@@ -47,10 +47,12 @@ def test_retrieve_chunks_node_adds_retrieved_chunks(monkeypatch) -> None:
 
     state = create_initial_state("Do privileged users need MFA?")
 
-    new_state = retrieve_chunks_node(
-        state=state,
+    state = create_initial_state(
+        question="Do privileged users need MFA?",
         top_k=3,
     )
+
+    new_state = retrieve_chunks_node(state=state)
 
     assert new_state["question"] == "Do privileged users need MFA?"
     assert new_state["retrieval_result"] is not None

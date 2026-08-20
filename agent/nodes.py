@@ -18,11 +18,14 @@ def retrieve_chunks_node(
     it receives state and returns updated state.
     """
 
+    resolved_index_dir = state.get("index_dir", str(index_dir))
+    resolved_top_k = state.get("top_k", top_k)
+
     retrieval_result = retrieve(
         query=state["question"],
         mode="vector",
-        top_k=top_k,
-        index_dir=index_dir,
+        top_k=resolved_top_k,
+        index_dir=resolved_index_dir,
     )
 
     debug: dict[str, Any] = dict(state.get("debug", {}))
@@ -91,6 +94,7 @@ def generate_answer_node(
     """
 
     retrieval_result = state.get("retrieval_result")
+    resolved_max_sources = state.get("max_sources", max_sources)
 
     if retrieval_result is None:
         raise ValueError(
@@ -101,7 +105,7 @@ def generate_answer_node(
     answer_result = generate_answer_from_retrieval(
         question=state["question"],
         retrieval_result=retrieval_result,
-        max_sources=max_sources,
+        max_sources=resolved_max_sources,
     )
 
     debug: dict[str, Any] = dict(state.get("debug", {}))

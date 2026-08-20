@@ -11,8 +11,8 @@ if str(PROJECT_ROOT) not in sys.path:
 
 
 from app.demo_questions import get_default_question, get_demo_questions
+from app.rag_execution import run_policy_question
 from ingestion.build_index import build_local_index
-from rag.answer_generator import answer_question
 
 
 INDEX_DIR = Path(".cache/vector_store")
@@ -74,6 +74,23 @@ def main() -> None:
     st.sidebar.write("**Default mode:** local / zero-cost")
     st.sidebar.write("**Vector index:** local JSON cache")
     st.sidebar.write("**Cloud:** optional later, disabled by default")
+
+    execution_mode_label = st.sidebar.selectbox(
+        "Execution mode",
+        options=["Classic RAG", "LangGraph RAG"],
+        help=(
+            "Classic RAG uses direct function calls. "
+            "LangGraph RAG runs the same flow as explicit workflow nodes."
+        ),
+    )
+
+    execution_mode = (
+        "langgraph"
+        if execution_mode_label == "LangGraph RAG"
+        else "classic"
+    )
+
+    st.sidebar.caption(f"Current mode: {execution_mode_label}")
 
     st.title("PolicyPilot RAG Studio")
     st.caption(
@@ -138,10 +155,11 @@ def main() -> None:
             st.stop()
 
         with st.spinner("Retrieving sources and generating answer..."):
-            result = answer_question(
+            result = run_policy_question(
                 question=question,
                 index_dir=INDEX_DIR,
                 top_k=top_k,
+                execution_mode=execution_mode,
             )
 
         st.subheader("Answer")
@@ -155,31 +173,41 @@ def main() -> None:
         render_sources(result.sources)
 
         with st.expander("Debug details"):
+            st.write(f"**Execution mode:** `{result.debug.get('execution_mode')}`")
             st.write(f"**Model:** `{result.model_name}`")
             st.write(f"**Grounding status:** `{result.grounding_status}`")
             st.write(f"**Grounding reason:** {result.debug.get('grounding_reason')}")
             st.write(
                 f"**Retrieved chunks:** {result.debug.get('retrieved_chunk_count')}"
             )
+
             retrieved_chunks = result.debug.get("retrieved_chunks", [])
 
-        if retrieved_chunks:
-            st.write("**Retrieved chunk details:**")
+            if retrieved_chunks:
+                st.write("**Retrieved chunks used by the RAG pipeline:**")
 
-            for chunk in retrieved_chunks:
-                cited_marker = (
-                    "✅ cited"
-                    if chunk["chunk_id"] in result.cited_chunk_ids
-                    else "not cited"
-                )
+                for chunk in retrieved_chunks:
+                    cited_marker = (
+                        "✅ cited"
+                        if chunk["chunk_id"] in result.cited_chunk_ids
+                        else "not cited"
+                    )
 
-                with st.expander(
-                    f"Rank {chunk['rank']} | Score {chunk['score']} | {chunk['title']} | {cited_marker}"
-                ):
-                    st.write(f"**Chunk ID:** `{chunk['chunk_id']}`")
-                    st.write(f"**Heading:** {chunk['heading']}")
-                    st.write(f"**Source path:** `{chunk['source_path']}`")
-                    st.write(chunk["preview"])
+                    with st.expander(
+                        f"Rank {chunk['rank']} | Score {chunk['score']} | "
+                        f"{chunk['title']} | {cited_marker}"
+                    ):
+                        st.write(f"**Chunk ID:** `{chunk['chunk_id']}`")
+                        st.write(f"**Heading:** {chunk['heading']}")
+                        st.write(f"**Source path:** `{chunk['source_path']}`")
+                        st.write(chunk["preview"])
+
+            workflow_debug = result.debug.get("workflow")
+
+            if workflow_debug:
+                st.write("**LangGraph workflow debug:**")
+                st.json(workflow_debug)
+
             st.write("**Cited chunk IDs:**")
             st.json(result.cited_chunk_ids)
 
