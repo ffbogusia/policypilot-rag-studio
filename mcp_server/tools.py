@@ -2,7 +2,8 @@ from pathlib import Path
 from typing import Any, Literal
 
 from app.rag_execution import run_policy_question
-from rag.schemas import AnswerResult
+from rag.schemas import AnswerResult, ChunkResult
+from retrieval.retriever import retrieve
 
 
 ExecutionMode = Literal["classic", "langgraph"]
@@ -20,6 +21,20 @@ def _source_to_dict(source: dict[str, object]) -> dict[str, object]:
         "preview": source.get("preview"),
     }
 
+def _chunk_to_dict(chunk: ChunkResult) -> dict[str, object]:
+    """Convert one retrieved chunk into a JSON-friendly dictionary."""
+
+    return {
+        "chunk_id": chunk.chunk_id,
+        "text": chunk.text,
+        "source_path": chunk.source_path,
+        "title": chunk.title,
+        "heading": chunk.heading,
+        "score": chunk.score,
+        "retrieval_mode": chunk.retrieval_mode,
+        "rank": chunk.rank,
+        "preview": chunk.preview(220),
+    }
 
 def answer_result_to_tool_response(result: AnswerResult) -> dict[str, Any]:
     """Convert an AnswerResult into an MCP-friendly tool response."""
@@ -64,3 +79,36 @@ def answer_policy_question_tool(
     )
 
     return answer_result_to_tool_response(result)
+
+
+
+def search_policy_docs_tool(
+    query: str,
+    index_dir: str | Path = ".cache/vector_store",
+    top_k: int = 5,
+) -> dict[str, Any]:
+    """
+    Search policy documents and return retrieved chunks.
+
+    This is an MCP-ready search tool. It returns evidence chunks only,
+    without generating a final answer.
+    """
+
+    retrieval_result = retrieve(
+        query=query,
+        mode="vector",
+        top_k=top_k,
+        index_dir=index_dir,
+    )
+
+    return {
+        "query": retrieval_result.query,
+        "retrieval_mode": retrieval_result.retrieval_mode,
+        "top_k": retrieval_result.top_k,
+        "index_path": str(retrieval_result.index_path),
+        "chunks": [
+            _chunk_to_dict(chunk)
+            for chunk in retrieval_result.chunks
+        ],
+        "debug": retrieval_result.debug,
+    }
