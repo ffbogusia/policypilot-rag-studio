@@ -2,6 +2,8 @@ from pathlib import Path
 from typing import Any, Literal
 
 from app.rag_execution import run_policy_question
+from eval.run_eval import load_golden_questions, run_evaluation
+from ingestion.build_index import load_vector_index
 from rag.schemas import AnswerResult, ChunkResult
 from retrieval.retriever import retrieve
 
@@ -35,7 +37,23 @@ def _chunk_to_dict(chunk: ChunkResult) -> dict[str, object]:
         "rank": chunk.rank,
         "preview": chunk.preview(220),
     }
+def _eval_result_to_dict(result) -> dict[str, Any]:
+    """Convert one evaluation result into a JSON-friendly dictionary."""
 
+    return {
+        "id": result.id,
+        "question": result.question,
+        "passed": result.passed,
+        "expected_source": result.expected_source,
+        "actual_sources": result.actual_sources,
+        "expected_refusal": result.expected_refusal,
+        "actual_refusal": result.actual_refusal,
+        "source_match": result.source_match,
+        "refusal_match": result.refusal_match,
+        "must_contain_match": result.must_contain_match,
+        "grounding_status": result.grounding_status,
+        "answer_preview": result.answer_preview,
+    }
 def answer_result_to_tool_response(result: AnswerResult) -> dict[str, Any]:
     """Convert an AnswerResult into an MCP-friendly tool response."""
 
@@ -111,4 +129,73 @@ def search_policy_docs_tool(
             for chunk in retrieval_result.chunks
         ],
         "debug": retrieval_result.debug,
+    }
+
+def get_chunk_by_id_tool(
+    chunk_id: str,
+    index_dir: str | Path = ".cache/vector_store",
+) -> dict[str, Any]:
+    """
+    Return one indexed chunk by chunk ID.
+
+    This is useful for inspecting a specific chunk returned by search or citation.
+    """
+
+    index_data = load_vector_index(index_dir)
+    chunks = index_data.get("chunks", [])
+
+    for chunk in chunks:
+        if chunk.get("chunk_id") == chunk_id:
+            return {
+                "found": True,
+                "chunk_id": chunk_id,
+                "chunk": {
+                    "chunk_id": chunk.get("chunk_id"),
+                    "text": chunk.get("text"),
+                    "source_path": chunk.get("source_path"),
+                    "title": chunk.get("title"),
+                    "heading": chunk.get("heading"),
+                    "metadata": chunk.get("metadata", {}),
+                },
+            }
+
+    return {
+        "found": False,
+        "chunk_id": chunk_id,
+        "chunk": None,
+    }
+
+def run_rag_eval_tool(
+    golden_path: str | Path = "eval/golden_questions.jsonl",
+    index_dir: str | Path = ".cache/vector_store",
+    top_k: int = 5,
+) -> dict[str, Any]:
+    """
+    Run local RAG evaluation and return a JSON-friendly summary.
+
+    This tool does not write files. It returns structured evaluation results.
+    """
+
+    cases = load_golden_questions(golden_path)
+    results = run_evaluation(
+        cases=cases,
+        index_dir=index_dir,
+        top_k=top_k,
+    )
+
+    passed_count = sum(result.passed for result in results)
+    total_count = len(results)
+
+    return {
+        "golden_path": str(golden_path),
+        "index_dir": str(index_dir),
+        "top_k": top_k,
+        "passed": passed_count,
+        "failed": total_count - passed_count,
+        "total": total_count,
+        "pass_rate": passed_count / total_count if total_count else 0.0,
+        "results": [
+            _eval_result_to_dict(result)
+            for result in results
+        ],
     }
