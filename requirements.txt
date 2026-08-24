@@ -7,6 +7,5 @@ chromadb
 pydantic
 python-dotenv
 pyyaml
-pytestlanggraph
-langgraph
+pytest
 mcp[cli]
