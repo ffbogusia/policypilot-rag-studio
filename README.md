@@ -1,12 +1,12 @@
 # PolicyPilot RAG Studio
 
-Transparent, local-first RAG engineering lab for policy and security documents.
+Transparent, local (first) RAG engineering lab for policy and security documents.
 
 ## Why this project exists
 
 PolicyPilot RAG Studio demonstrates how to build a Retrieval-Augmented Generation system that is transparent, testable and cost-aware.
 
-The goal is not to build a random chatbot. The goal is to show the full RAG pipeline:
+The goal is to show the full RAG pipeline:
 
 - document ingestion,
 - chunking,
@@ -18,9 +18,9 @@ The goal is not to build a random chatbot. The goal is to show the full RAG pipe
 - evaluation with golden questions,
 - LangGraph workflow,
 - MCP tools,
-- responsible AI and security notes.
+and responsible AI and security notes.
 
-## Local-first / zero-cost by default
+## Local-first
 
 This project is designed to run locally by default.
 
@@ -29,13 +29,10 @@ It does not require:
 - Azure,
 - Azure OpenAI,
 - Azure AI Search,
-- OpenAI API,
-- Claude API,
-- paid hosting.
-
+- 
 Optional cloud extensions may be documented later, but the default version uses local tools.
 
-## Planned stack
+## The stack I plan for now:
 
 - Python
 - Streamlit
@@ -47,7 +44,7 @@ Optional cloud extensions may be documented later, but the default version uses 
 - MCP Python SDK
 - pytest
 - GitHub Actions
-- Markdown documentation
+- and Markdown documentation
 
 ## Repository structure
 
@@ -104,7 +101,7 @@ This project should not be used as real legal, HR, compliance or security advice
 
 # Sample policy documents
 
-This folder contains synthetic policy documents created for educational and portfolio purposes.
+This folder contains synthetic policy documents created for educational purposes.
 
 The documents are fictional. They do not contain real company data, employee data, customer data, secrets or confidential procedures.
 
