@@ -4,7 +4,7 @@ PYTHON ?= python
 EMBEDDING_PROVIDER ?= hash
 REPORT_OUT ?= eval/eval_report.md
 
-.PHONY: help test index eval app docker-config clean
+.PHONY: help test index eval app mcp-smoke docker-config clean
 
 help:
 > @echo "Available commands:"
@@ -14,6 +14,7 @@ help:
 > @echo "  make app            Build index and start the Streamlit app"
 > @echo "  make docker-config  Validate docker-compose.yml"
 > @echo "  make clean          Remove local generated caches"
+> @echo "  make mcp-smoke      Build index and run MCP smoke check"
 
 test:
 > $(PYTHON) -m pytest -q
@@ -35,3 +36,6 @@ clean:
 > rm -rf .pytest_cache
 > rm -rf .ruff_cache
 > find . -type d -name "__pycache__" -prune -exec rm -rf {} +
+
+mcp-smoke: index
+> $(PYTHON) -m mcp_server.smoke_check
