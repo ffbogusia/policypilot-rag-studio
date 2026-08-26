@@ -1,30 +1,30 @@
 # MCP Integration
 
-PolicyPilot RAG Studio exposes selected local RAG capabilities as Model Context Protocol tools.
+I added an MCP (Model Context Protocol) layer to PolicyPilot RAG Studio that exposes some of the RAG functionality as callable tools. The idea was simple: the logic I already had in Python shouldn't be locked inside the Streamlit UI — it should be usable from other places too.
 
-The MCP layer is designed as a thin wrapper around the existing Python implementation. The default project setup remains local-first, free to run, and based on synthetic policy documents.
+The project itself still runs entirely locally, with no paid cloud services, on synthetic policy documents. MCP doesn't change any of that — it's just a thin wrapper on top of the existing code.
 
-## Purpose
+## Why
 
-The MCP integration makes the core RAG workflow callable as tools:
+I wanted the core RAG workflow to be callable as a set of tools:
 
-- answer a policy question with grounded citations,
-- search policy documents and return retrieved chunks,
-- inspect one indexed chunk by ID,
-- run the local RAG evaluation suite.
+- answer a policy question and back it up with citations,
+- search the indexed documents and return the matching chunks,
+- look up a specific chunk by its ID,
+- run the local evaluation suite against a golden question set.
 
-This keeps the RAG logic reusable outside the Streamlit UI.
+This way the RAG logic isn't tied to the UI and can be reused elsewhere.
 
-## Components
+## How it's organized
 
-| File | Purpose |
+| File | What it does |
 | --- | --- |
-| `mcp_server/tools.py` | Plain Python tool functions. They contain the reusable logic and return JSON-friendly dictionaries. |
-| `mcp_server/server.py` | MCP server wrapper. It exposes selected functions from `tools.py` as MCP tools. |
-| `mcp_server/smoke_check.py` | Local smoke check for verifying that the MCP tool layer can call the underlying RAG functionality. |
-| `tests/test_mcp_tools.py` | Unit tests for the JSON-friendly tool functions. |
-| `tests/test_mcp_server.py` | Tests for the MCP wrapper functions. |
-| `tests/test_mcp_smoke_check.py` | Test for the smoke check status output. |
+| `mcp_server/tools.py` | Plain Python functions — this is where the actual logic lives, returning data that's already JSON-friendly. |
+| `mcp_server/server.py` | The MCP wrapper — takes the functions from `tools.py` and exposes them as MCP tools. |
+| `mcp_server/smoke_check.py` | A quick local check to make sure the MCP layer is actually talking to the underlying RAG logic correctly. |
+| `tests/test_mcp_tools.py` | Unit tests for the functions in `tools.py`. |
+| `tests/test_mcp_server.py` | Tests for the MCP wrapper. |
+| `tests/test_mcp_smoke_check.py` | Test for the smoke check output. |
 
 ## Available tools
 
@@ -39,18 +39,18 @@ Inputs:
 - `top_k`
 - `execution_mode`
 
-Supported execution modes:
+Supported modes:
 
 - `classic`
 - `langgraph`
 
-The response contains the answer, refusal status, grounding status, cited chunk IDs, sources and debug metadata.
+The response includes the answer itself, whether the model refused to answer, whether the answer is actually grounded in sources, the cited chunk IDs, the sources, and some debug metadata.
 
 ### `search_policy_docs`
 
-Searches the indexed policy documents and returns retrieved chunks.
+Searches the indexed documents and returns the matching chunks.
 
-This tool is useful when the caller needs evidence chunks without generating a final answer.
+Useful when you just need the evidence chunks without generating a final answer.
 
 Inputs:
 
@@ -60,9 +60,9 @@ Inputs:
 
 ### `get_chunk_by_id`
 
-Returns one indexed chunk by its chunk ID.
+Returns a specific indexed chunk by its ID.
 
-This is useful for inspecting a specific source chunk returned by search, citations or the RAG Debugger.
+Handy for inspecting a source chunk that showed up in search results, citations, or the RAG Debugger.
 
 Inputs:
 
@@ -79,11 +79,11 @@ Inputs:
 - `index_dir`
 - `top_k`
 
-The response includes pass/fail counts, pass rate and per-question evaluation details.
+The response includes pass/fail counts, the pass rate, and per-question details.
 
-## Local usage
+## Running it locally
 
-Before running MCP-related checks, build the local index:
+Build the local index first:
 
 ```bash
 make index
@@ -101,42 +101,32 @@ Run the MCP smoke check:
 python -m mcp_server.smoke_check
 ```
 
-Expected output includes status lines for:
+The output should show status lines for the answer tool, the search tool, the chunk lookup tool, and the evaluation tool.
 
-- answer tool,
-- search tool,
-- chunk lookup tool,
-- evaluation tool.
+## A note on the architecture
 
-## Design notes
-
-The MCP layer intentionally does not duplicate the RAG logic.
-
-The split is:
+I wanted the MCP layer to reuse the RAG logic, not duplicate it. So the split is:
 
 ```text
-tools.py       -> reusable Python functions
+tools.py       -> the actual logic
 server.py      -> MCP wrapper
-smoke_check.py -> local verification helper
+smoke_check.py -> local verification
 ```
 
-This makes the project easier to test because most behavior can be verified without starting an external MCP client.
+That makes most of the behavior testable without ever having to spin up an external MCP client.
 
-## Local-first constraints
+## Constraints I'm sticking to
 
-The MCP integration follows the same constraints as the rest of the project:
+The MCP layer follows the same rules as the rest of the project:
 
-- no paid cloud resources are required,
-- no real company documents are included,
-- sample documents are synthetic,
-- local vector indexes are generated artifacts and should not be committed,
-- secrets must be provided through environment variables if needed in future extensions.
+- no paid cloud resources,
+- no real company documents — everything is synthetic,
+- local vector indexes are generated artifacts and aren't committed to the repo,
+- any secrets added later should go through environment variables.
 
-## Current limitations
+## What's not here yet
 
-The current MCP layer focuses on local tool exposure and testability.
-
-It does not yet include:
+Right now the MCP layer is focused on exposing tools locally and making them testable. It doesn't include:
 
 - a production deployment setup,
 - remote authentication,
@@ -144,4 +134,4 @@ It does not yet include:
 - cloud-based vector storage,
 - paid LLM integrations.
 
-These are intentionally left out of the default version to keep the project simple, reproducible and cost-controlled.
+I left these out on purpose to keep the default version simple, reproducible, and cheap to run.

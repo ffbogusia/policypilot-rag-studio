@@ -1,38 +1,34 @@
 # PolicyPilot RAG Studio
 
-Transparent, local (first) RAG engineering lab for policy and security documents.
+A transparent, local-first RAG engineering lab built around policy and security documents.
 
 ## Why this project exists
 
-PolicyPilot RAG Studio demonstrates how to build a Retrieval-Augmented Generation system that is transparent, testable and cost-aware.
+I built PolicyPilot RAG Studio to show how a Retrieval-Augmented Generation system can be built end-to-end in a way that's transparent, testable, and doesn't rely on paid infrastructure.
 
-The goal is to show the full RAG pipeline:
+It covers the full pipeline:
 
-- document ingestion,
-- chunking,
-- local embeddings,
-- local vector search,
-- grounded answers with citations,
-- refusal behavior when sources are insufficient,
-- RAG debugging,
-- evaluation with golden questions,
-- LangGraph workflow,
-- MCP tools,
-and responsible AI and security notes.
+- document ingestion
+- chunking
+- local embeddings
+- local vector search
+- grounded answers with citations
+- refusal behavior when the sources don't support an answer
+- a RAG debugger
+- evaluation against golden questions
+- a LangGraph workflow
+- MCP tools
+- notes on responsible AI and security
 
 ## Local-first
 
-This project is designed to run locally by default.
+The project runs locally by default and doesn't require Azure, Azure OpenAI, or Azure AI Search.
 
-It does not require:
+Cloud extensions might get documented at some point, but the default setup is meant to work entirely on your own machine.
 
-- Azure,
-- Azure OpenAI,
-- Azure AI Search,
-- 
-Optional cloud extensions may be documented later, but the default version uses local tools.
+## Stack
 
-## The stack I plan for now:
+What I'm using so far:
 
 - Python
 - Streamlit
@@ -40,11 +36,16 @@ Optional cloud extensions may be documented later, but the default version uses 
 - LangGraph
 - Sentence Transformers
 - Chroma or FAISS
-- Ollama or local fallback mode
+- Ollama, with a local fallback mode
 - MCP Python SDK
 - pytest
 - GitHub Actions
-- and Markdown documentation
+- Markdown for documentation
+
+## Documentation
+
+- [Architecture overview](docs/architecture.md)
+- [MCP integration](docs/mcp.md)
 
 ## Repository structure
 
@@ -63,56 +64,59 @@ policypilot-rag-studio/
   tests/
   docs/
   .github/workflows/
+```
 
+## MVP roadmap
 
+- [ ] Initialize repository and sample policy documents
+- [ ] Load Markdown documents with metadata
+- [ ] Split documents into chunks
+- [ ] Create local embeddings
+- [ ] Build a local vector index
+- [ ] Retrieve relevant chunks
+- [ ] Generate grounded answers with citations
+- [ ] Add Streamlit UI and RAG Debugger
+- [ ] Add evaluation with golden questions
+- [ ] Add LangGraph workflow
+- [ ] Add MCP tools
+- [ ] Add CI and portfolio documentation
 
-MVP roadmap
-Initialize repository and sample policy documents.
-Load Markdown documents with metadata.
-Split documents into chunks.
-Create local embeddings.
-Build a local vector index.
-Retrieve relevant chunks.
-Generate grounded answers with citations.
-Add Streamlit UI and RAG Debugger.
-Add evaluation with golden questions.
-Add LangGraph workflow.
-Add MCP tools.
-Add CI and portfolio documentation.
-Sample use cases
+## Sample use cases
 
-Example questions the app should answer from sources:
+Questions the app should be able to answer from the source documents:
 
-Can contractors access production data?
-What should an employee do after a phishing email?
-Is MFA required for privileged access?
+- Can contractors access production data?
+- What should an employee do after a phishing email?
+- Is MFA required for privileged access?
 
-Example questions the app should refuse:
+Questions the app should refuse to answer:
 
-What is the CEO's favorite restaurant?
-What is the secret admin password?
-Which employee was fired?
-Responsible AI note
+- What is the CEO's favorite restaurant?
+- What is the secret admin password?
+- Which employee was fired?
 
-All sample documents in this repository are synthetic and created for educational purposes.
+## Responsible AI note
 
-This project should not be used as real legal, HR, compliance or security advice without human review.
+All sample documents in this repository are synthetic and were created for educational purposes.
 
+This project shouldn't be used as real legal, HR, compliance, or security advice without human review.
+
+---
 
 # Sample policy documents
 
 This folder contains synthetic policy documents created for educational purposes.
 
-The documents are fictional. They do not contain real company data, employee data, customer data, secrets or confidential procedures.
+They're entirely fictional and don't contain any real company data, employee data, customer data, secrets, or confidential procedures.
 
-The purpose of these documents is to test and demonstrate:
+They exist to test and demonstrate:
 
-- document ingestion,
-- chunking,
-- metadata extraction,
-- retrieval,
-- grounded answers,
-- citations,
-- refusal behavior,
-- prompt-injection safety,
-- RAG evaluation.
+- document ingestion
+- chunking
+- metadata extraction
+- retrieval
+- grounded answers
+- citations
+- refusal behavior
+- prompt-injection safety
+- RAG evaluation
