@@ -194,6 +194,18 @@ def print_results(results: list[EvaluationResult]) -> None:
         print(f"  Answer preview:   {result.answer_preview}")
         print("-" * 72)
 
+
+def calculate_pass_rate(results: list[EvaluationResult]) -> float:
+    """Calculate the share of passed evaluation cases."""
+
+    if not results:
+        return 0.0
+
+    passed_count = sum(result.passed for result in results)
+
+    return passed_count / len(results)
+
+
 def build_markdown_report(results: list[EvaluationResult]) -> str:
     """Build a Markdown evaluation report."""
 
@@ -279,6 +291,12 @@ def main() -> None:
         default=str(DEFAULT_REPORT_PATH),
         help="Path where the Markdown evaluation report will be written.",
     )
+    parser.add_argument(
+        "--min-pass-rate",
+        type=float,
+        default=None,
+        help="Optional minimum pass rate required for the evaluation to succeed.",
+    )
 
     args = parser.parse_args()
 
@@ -297,6 +315,15 @@ def main() -> None:
     )
 
     print(f"Markdown report written to: {report_path}")
+
+    pass_rate = calculate_pass_rate(results)
+
+    if args.min_pass_rate is not None:
+        print(f"Minimum required pass rate: {args.min_pass_rate:.2f}")
+        print(f"Actual pass rate:           {pass_rate:.2f}")
+
+        if pass_rate < args.min_pass_rate:
+            raise SystemExit(1)
 
 
 if __name__ == "__main__":

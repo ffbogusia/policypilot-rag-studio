@@ -5,6 +5,8 @@ from eval.run_eval import (
     load_golden_questions,
     build_markdown_report,
     write_markdown_report,
+    EvaluationResult,
+    calculate_pass_rate,
 )
 from rag.schemas import AnswerResult
 
@@ -133,3 +135,33 @@ def test_write_markdown_report_creates_file(tmp_path) -> None:
 
     assert report_path.exists()
     assert "Do privileged users need MFA?" in report_path.read_text()
+
+def _quality_gate_result(passed: bool) -> EvaluationResult:
+    return EvaluationResult(
+        id="q-quality",
+        question="Quality gate test question",
+        passed=passed,
+        expected_source="mfa_policy.md",
+        actual_sources=["data/sample_policies/mfa_policy.md"],
+        expected_refusal=False,
+        actual_refusal=False,
+        source_match=True,
+        refusal_match=True,
+        must_contain_match=True,
+        grounding_status="PASS",
+        answer_preview="Sample answer.",
+    )
+
+
+def test_calculate_pass_rate_counts_passed_results() -> None:
+    results = [
+        _quality_gate_result(passed=True),
+        _quality_gate_result(passed=False),
+        _quality_gate_result(passed=True),
+    ]
+
+    assert calculate_pass_rate(results) == 2 / 3
+
+
+def test_calculate_pass_rate_returns_zero_for_empty_results() -> None:
+    assert calculate_pass_rate([]) == 0.0
