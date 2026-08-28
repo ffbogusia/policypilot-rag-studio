@@ -12,6 +12,10 @@ last_reviewed: 2026-06-01
 
 This policy describes how employees should report and respond to suspected security incidents.
 
+## Initial response
+
+After a suspected security incident, employees should report the incident to Security Operations as soon as possible, preserve relevant evidence and follow instructions from Security Operations or IT Support.
+
 ## Phishing emails
 
 If an employee receives a suspicious email, they should not click links or open attachments. The email should be reported to Security Operations as soon as possible.

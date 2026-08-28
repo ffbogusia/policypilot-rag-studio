@@ -1,6 +1,6 @@
 # RAG Evaluation Report
 
-**Summary:** 9/10 passed
+**Summary:** 10/10 passed
 
 This report was generated locally from golden questions.
 
@@ -10,7 +10,7 @@ This report was generated locally from golden questions.
 | --- | --- | --- | --- | --- | --- |
 | q001 | PASS | Can contractors access production systems? | access_policy.md | False | PASS |
 | q002 | PASS | Do privileged users need MFA? | mfa_policy.md | False | PASS |
-| q003 | FAIL | What should employees do after a security incident? | incident_response.md | False | PASS |
+| q003 | PASS | What should employees do after a security incident? | incident_response.md | False | PASS |
 | q004 | PASS | Can employees share passwords in chat? | password_policy.md | False | PASS |
 | q005 | PASS | Is VPN required when using airport Wi-Fi? | remote_work_policy.md | False | PASS |
 | q006 | PASS | Can customer data be shared with public AI tools? | privacy_policy.md | False | PASS |
