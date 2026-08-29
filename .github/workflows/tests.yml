@@ -34,3 +34,7 @@ jobs:
       - name: Run tests
         run: |
           pytest -q
+
+      - name: Run RAG quality gate
+        run: |
+          make quality-gate
