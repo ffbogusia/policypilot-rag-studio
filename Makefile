@@ -3,8 +3,9 @@
 PYTHON ?= python
 EMBEDDING_PROVIDER ?= hash
 REPORT_OUT ?= eval/eval_report.md
+QUALITY_MIN_PASS_RATE ?= 0.9
 
-.PHONY: help test index eval app mcp-smoke docker-config clean
+.PHONY: help test index eval quality-gate app mcp-smoke docker-config clean
 
 help:
 > @echo "Available commands:"
@@ -15,6 +16,7 @@ help:
 > @echo "  make docker-config  Validate docker-compose.yml"
 > @echo "  make clean          Remove local generated caches"
 > @echo "  make mcp-smoke      Build index and run MCP smoke check"
+> @echo "  make quality-gate   Run RAG evaluation with minimum pass rate"
 
 test:
 > $(PYTHON) -m pytest -q
@@ -24,6 +26,9 @@ index:
 
 eval: index
 > $(PYTHON) -m eval.run_eval --report-out $(REPORT_OUT)
+
+quality-gate: index
+> $(PYTHON) -m eval.run_eval --min-pass-rate $(QUALITY_MIN_PASS_RATE) --report-out $(REPORT_OUT)
 
 app: index
 > streamlit run app/streamlit_app.py
