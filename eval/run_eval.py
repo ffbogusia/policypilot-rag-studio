@@ -205,6 +205,18 @@ def calculate_pass_rate(results: list[EvaluationResult]) -> float:
 
     return passed_count / len(results)
 
+def build_evaluation_summary(results: list[EvaluationResult]) -> dict[str, int | float]:
+    """Build a JSON-friendly summary for evaluation results."""
+
+    passed_count = sum(result.passed for result in results)
+    total_count = len(results)
+
+    return {
+        "passed": passed_count,
+        "failed": total_count - passed_count,
+        "total": total_count,
+        "pass_rate": calculate_pass_rate(results),
+    }
 
 def build_markdown_report(results: list[EvaluationResult]) -> str:
     """Build a Markdown evaluation report."""

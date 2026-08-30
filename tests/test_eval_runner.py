@@ -7,6 +7,7 @@ from eval.run_eval import (
     write_markdown_report,
     EvaluationResult,
     calculate_pass_rate,
+    build_evaluation_summary,
 )
 from rag.schemas import AnswerResult
 
@@ -95,6 +96,7 @@ def test_evaluate_answer_supports_expected_refusal() -> None:
     assert result.passed is True
     assert result.refusal_match is True
 
+
 def test_write_markdown_report_creates_file(tmp_path) -> None:
     result = evaluate_answer(
         EvaluationCase(
@@ -136,6 +138,7 @@ def test_write_markdown_report_creates_file(tmp_path) -> None:
     assert report_path.exists()
     assert "Do privileged users need MFA?" in report_path.read_text()
 
+
 def _quality_gate_result(passed: bool) -> EvaluationResult:
     return EvaluationResult(
         id="q-quality",
@@ -165,3 +168,31 @@ def test_calculate_pass_rate_counts_passed_results() -> None:
 
 def test_calculate_pass_rate_returns_zero_for_empty_results() -> None:
     assert calculate_pass_rate([]) == 0.0
+
+
+def test_build_evaluation_summary_counts_results() -> None:
+    results = [
+        _quality_gate_result(passed=True),
+        _quality_gate_result(passed=False),
+        _quality_gate_result(passed=True),
+    ]
+
+    summary = build_evaluation_summary(results)
+
+    assert summary == {
+        "passed": 2,
+        "failed": 1,
+        "total": 3,
+        "pass_rate": 2 / 3,
+    }
+
+
+def test_build_evaluation_summary_handles_empty_results() -> None:
+    summary = build_evaluation_summary([])
+
+    assert summary == {
+        "passed": 0,
+        "failed": 0,
+        "total": 0,
+        "pass_rate": 0.0,
+    }

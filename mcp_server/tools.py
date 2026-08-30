@@ -2,7 +2,11 @@ from pathlib import Path
 from typing import Any, Literal
 
 from app.rag_execution import run_policy_question
-from eval.run_eval import load_golden_questions, run_evaluation
+from eval.run_eval import (
+    build_evaluation_summary,
+    load_golden_questions,
+    run_evaluation,
+)
 from ingestion.build_index import load_vector_index
 from rag.schemas import AnswerResult, ChunkResult
 from retrieval.retriever import retrieve
@@ -23,6 +27,7 @@ def _source_to_dict(source: dict[str, object]) -> dict[str, object]:
         "preview": source.get("preview"),
     }
 
+
 def _chunk_to_dict(chunk: ChunkResult) -> dict[str, object]:
     """Convert one retrieved chunk into a JSON-friendly dictionary."""
 
@@ -37,6 +42,8 @@ def _chunk_to_dict(chunk: ChunkResult) -> dict[str, object]:
         "rank": chunk.rank,
         "preview": chunk.preview(220),
     }
+
+
 def _eval_result_to_dict(result) -> dict[str, Any]:
     """Convert one evaluation result into a JSON-friendly dictionary."""
 
@@ -54,6 +61,8 @@ def _eval_result_to_dict(result) -> dict[str, Any]:
         "grounding_status": result.grounding_status,
         "answer_preview": result.answer_preview,
     }
+
+
 def answer_result_to_tool_response(result: AnswerResult) -> dict[str, Any]:
     """Convert an AnswerResult into an MCP-friendly tool response."""
 
@@ -64,10 +73,7 @@ def answer_result_to_tool_response(result: AnswerResult) -> dict[str, Any]:
         "grounding_status": result.grounding_status,
         "model_name": result.model_name,
         "cited_chunk_ids": result.cited_chunk_ids,
-        "sources": [
-            _source_to_dict(source)
-            for source in result.sources
-        ],
+        "sources": [_source_to_dict(source) for source in result.sources],
         "debug": {
             "execution_mode": result.debug.get("execution_mode"),
             "grounding_reason": result.debug.get("grounding_reason"),
@@ -99,7 +105,6 @@ def answer_policy_question_tool(
     return answer_result_to_tool_response(result)
 
 
-
 def search_policy_docs_tool(
     query: str,
     index_dir: str | Path = ".cache/vector_store",
@@ -124,12 +129,10 @@ def search_policy_docs_tool(
         "retrieval_mode": retrieval_result.retrieval_mode,
         "top_k": retrieval_result.top_k,
         "index_path": str(retrieval_result.index_path),
-        "chunks": [
-            _chunk_to_dict(chunk)
-            for chunk in retrieval_result.chunks
-        ],
+        "chunks": [_chunk_to_dict(chunk) for chunk in retrieval_result.chunks],
         "debug": retrieval_result.debug,
     }
+
 
 def get_chunk_by_id_tool(
     chunk_id: str,
@@ -183,17 +186,13 @@ def run_rag_eval_tool(
         top_k=top_k,
     )
 
-    passed_count = sum(result.passed for result in results)
-    total_count = len(results)
+    summary = build_evaluation_summary(results)
 
     return {
         "golden_path": str(golden_path),
         "index_dir": str(index_dir),
         "top_k": top_k,
-        "passed": passed_count,
-        "failed": total_count - passed_count,
-        "total": total_count,
-        "pass_rate": passed_count / total_count if total_count else 0.0,
+        **summary,
         "results": [
             _eval_result_to_dict(result)
             for result in results
