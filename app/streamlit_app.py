@@ -11,6 +11,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 
 from app.demo_questions import get_default_question, get_demo_questions
+from app.eval_diagnostics import run_eval_diagnostics
 from app.rag_execution import run_policy_question
 from ingestion.build_index import build_local_index
 
@@ -149,6 +150,32 @@ def main() -> None:
         value=5,
     )
 
+    with st.expander("Evaluation diagnostics"):
+        st.write(
+            "Run the local golden-question evaluation against the current vector index."
+        )
+
+        if st.button("Run local evaluation"):
+            with st.spinner("Running local RAG evaluation..."):
+                diagnostics = run_eval_diagnostics(
+                    index_dir=INDEX_DIR,
+                    top_k=top_k,
+                )
+
+            col1, col2, col3, col4 = st.columns(4)
+            col1.metric("Passed", diagnostics["passed"])
+            col2.metric("Failed", diagnostics["failed"])
+            col3.metric("Total", diagnostics["total"])
+            col4.metric("Pass rate", f"{diagnostics['pass_rate']:.0%}")
+
+            failed_questions = diagnostics["failed_questions"]
+
+            if failed_questions:
+                st.warning("Some evaluation questions failed.")
+                st.json(failed_questions)
+            else:
+                st.success("All evaluation questions passed.")
+
     if st.button("Ask PolicyPilot", type="primary"):
         if not question.strip():
             st.error("Please enter a question.")
@@ -213,6 +240,20 @@ def main() -> None:
 
             st.write("**Prompt preview:**")
             st.code(result.debug.get("prompt_preview", ""), language="text")
+    if st.button("Ask PolicyPilot", type="primary"):
+        if not question.strip():
+            st.error("Please enter a question.")
+            st.stop()
+
+        with st.spinner("Retrieving sources and generating answer..."):
+            result = run_policy_question(
+                question=question,
+                index_dir=INDEX_DIR,
+                top_k=top_k,
+                execution_mode=execution_mode,
+            )
+
+        # ...reszta bloku odpowiedzi...
 
 
 if __name__ == "__main__":
