@@ -14,6 +14,7 @@ from app.demo_questions import get_default_question, get_demo_questions
 from app.eval_diagnostics import run_eval_diagnostics
 from app.rag_execution import run_policy_question
 from ingestion.build_index import build_local_index
+from app.index_status import get_vector_index_status
 
 
 INDEX_DIR = Path(".cache/vector_store")
@@ -109,6 +110,20 @@ def main() -> None:
     st.info(
         "This is a local portfolio demo. It does not use paid cloud APIs by default."
     )
+    with st.expander("Vector index status"):
+        index_status = get_vector_index_status(INDEX_DIR)
+
+        if index_status["exists"]:
+            col1, col2, col3 = st.columns(3)
+            col1.metric("Chunks", index_status["chunk_count"])
+            col2.metric("Provider", index_status["embedding_provider"] or "-")
+            col3.metric("Dimension", index_status["embedding_dimension"] or "-")
+
+            st.write(f"**Model:** `{index_status['embedding_model']}`")
+            st.write(f"**Index path:** `{index_status['index_path']}`")
+        else:
+            st.warning("Local vector index was not found.")
+            st.write(f"Expected path: `{index_status['index_path']}`")
 
     if not ensure_index_exists():
         st.warning("Local vector index was not found.")
