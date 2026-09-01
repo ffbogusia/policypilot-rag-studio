@@ -128,7 +128,7 @@ def main() -> None:
     if not ensure_index_exists():
         st.warning("Local vector index was not found.")
 
-        if st.button("Build local index now"):
+        if st.button("Build local index now", key="build_local_index_button"):
             with st.spinner("Building local index..."):
                 index_path = build_local_index(
                     docs_dir="data/sample_policies",
@@ -170,7 +170,7 @@ def main() -> None:
             "Run the local golden-question evaluation against the current vector index."
         )
 
-        if st.button("Run local evaluation"):
+        if st.button("Run local evaluation", key="run_local_evaluation_button"):
             with st.spinner("Running local RAG evaluation..."):
                 diagnostics = run_eval_diagnostics(
                     index_dir=INDEX_DIR,
@@ -191,10 +191,10 @@ def main() -> None:
             else:
                 st.success("All evaluation questions passed.")
 
-    if st.button("Ask PolicyPilot", type="primary"):
-        if not question.strip():
-            st.error("Please enter a question.")
-            st.stop()
+        if st.button("Ask PolicyPilot", type="primary", key="ask_policy_pilot_button"):
+                         if not question.strip():
+                            st.error("Please enter a question.")
+                            st.stop()
 
         with st.spinner("Retrieving sources and generating answer..."):
             result = run_policy_question(
@@ -255,21 +255,6 @@ def main() -> None:
 
             st.write("**Prompt preview:**")
             st.code(result.debug.get("prompt_preview", ""), language="text")
-    if st.button("Ask PolicyPilot", type="primary"):
-        if not question.strip():
-            st.error("Please enter a question.")
-            st.stop()
-
-        with st.spinner("Retrieving sources and generating answer..."):
-            result = run_policy_question(
-                question=question,
-                index_dir=INDEX_DIR,
-                top_k=top_k,
-                execution_mode=execution_mode,
-            )
-
-        # ...reszta bloku odpowiedzi...
-
 
 if __name__ == "__main__":
     main()
