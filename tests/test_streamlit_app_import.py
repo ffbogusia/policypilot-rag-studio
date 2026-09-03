@@ -8,3 +8,5 @@ def test_streamlit_app_imports() -> None:
     assert hasattr(module, "ensure_index_exists")
     assert hasattr(module, "render_sources")
     assert hasattr(module, "render_grounding_status")
+    assert hasattr(module, "render_vector_index_status_panel")
+    assert hasattr(module, "render_evaluation_diagnostics_panel")

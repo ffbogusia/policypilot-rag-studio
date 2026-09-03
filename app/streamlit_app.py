@@ -60,6 +60,53 @@ def render_grounding_status(status: str, refusal: bool) -> None:
     else:
         st.error("Grounding: FAIL — the answer is not sufficiently supported.")
 
+def render_vector_index_status_panel() -> None:
+    """Render local vector index diagnostics."""
+
+    with st.expander("Vector index status"):
+        index_status = get_vector_index_status(INDEX_DIR)
+
+        if index_status["exists"]:
+            col1, col2, col3 = st.columns(3)
+            col1.metric("Chunks", index_status["chunk_count"])
+            col2.metric("Provider", index_status["embedding_provider"] or "-")
+            col3.metric("Dimension", index_status["embedding_dimension"] or "-")
+
+            st.write(f"**Model:** `{index_status['embedding_model']}`")
+            st.write(f"**Index path:** `{index_status['index_path']}`")
+        else:
+            st.warning("Local vector index was not found.")
+            st.write(f"Expected path: `{index_status['index_path']}`")
+
+
+def render_evaluation_diagnostics_panel(top_k: int) -> None:
+    """Render local RAG evaluation diagnostics."""
+
+    with st.expander("Evaluation diagnostics"):
+        st.write(
+            "Run the local golden-question evaluation against the current vector index."
+        )
+
+        if st.button("Run local evaluation", key="run_local_evaluation_button"):
+            with st.spinner("Running local RAG evaluation..."):
+                diagnostics = run_eval_diagnostics(
+                    index_dir=INDEX_DIR,
+                    top_k=top_k,
+                )
+
+            col1, col2, col3, col4 = st.columns(4)
+            col1.metric("Passed", diagnostics["passed"])
+            col2.metric("Failed", diagnostics["failed"])
+            col3.metric("Total", diagnostics["total"])
+            col4.metric("Pass rate", f"{diagnostics['pass_rate']:.0%}")
+
+            failed_questions = diagnostics["failed_questions"]
+
+            if failed_questions:
+                st.warning("Some evaluation questions failed.")
+                st.json(failed_questions)
+            else:
+                st.success("All evaluation questions passed.")
 
 def main() -> None:
     st.set_page_config(
@@ -110,20 +157,7 @@ def main() -> None:
     st.info(
         "This is a local portfolio demo. It does not use paid cloud APIs by default."
     )
-    with st.expander("Vector index status"):
-        index_status = get_vector_index_status(INDEX_DIR)
-
-        if index_status["exists"]:
-            col1, col2, col3 = st.columns(3)
-            col1.metric("Chunks", index_status["chunk_count"])
-            col2.metric("Provider", index_status["embedding_provider"] or "-")
-            col3.metric("Dimension", index_status["embedding_dimension"] or "-")
-
-            st.write(f"**Model:** `{index_status['embedding_model']}`")
-            st.write(f"**Index path:** `{index_status['index_path']}`")
-        else:
-            st.warning("Local vector index was not found.")
-            st.write(f"Expected path: `{index_status['index_path']}`")
+    render_vector_index_status_panel()
 
     if not ensure_index_exists():
         st.warning("Local vector index was not found.")
@@ -165,36 +199,12 @@ def main() -> None:
         value=5,
     )
 
-    with st.expander("Evaluation diagnostics"):
-        st.write(
-            "Run the local golden-question evaluation against the current vector index."
-        )
+    render_evaluation_diagnostics_panel(top_k=top_k)
 
-        if st.button("Run local evaluation", key="run_local_evaluation_button"):
-            with st.spinner("Running local RAG evaluation..."):
-                diagnostics = run_eval_diagnostics(
-                    index_dir=INDEX_DIR,
-                    top_k=top_k,
-                )
-
-            col1, col2, col3, col4 = st.columns(4)
-            col1.metric("Passed", diagnostics["passed"])
-            col2.metric("Failed", diagnostics["failed"])
-            col3.metric("Total", diagnostics["total"])
-            col4.metric("Pass rate", f"{diagnostics['pass_rate']:.0%}")
-
-            failed_questions = diagnostics["failed_questions"]
-
-            if failed_questions:
-                st.warning("Some evaluation questions failed.")
-                st.json(failed_questions)
-            else:
-                st.success("All evaluation questions passed.")
-
-        if st.button("Ask PolicyPilot", type="primary", key="ask_policy_pilot_button"):
-                         if not question.strip():
-                            st.error("Please enter a question.")
-                            st.stop()
+    if st.button("Ask PolicyPilot", type="primary", key="ask_policy_pilot_button"):
+        if not question.strip():
+            st.error("Please enter a question.")
+            st.stop()
 
         with st.spinner("Retrieving sources and generating answer..."):
             result = run_policy_question(
